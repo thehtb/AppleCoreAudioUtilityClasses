@@ -23,9 +23,9 @@ revision of 2013-01-02 and git tag 2013.1.2.
 
 Git Tag  | Date                    | Notes
 ---------|-------------------------|---------
-2013.1.2 | <nobr>2013-01-02</nobr> | Removed the need for ACCompatibility.h included from ACBaseCodec.cpp. Removed #defines around Add/RemovePropertyListenerBlock calls in CAHALAudioObject class.
-N/A      | <nobr>2012-10-31</nobr> | Fixes more analyzer warnings and updates ComponentBase.h to correctly define AUDIOCOMPONENT_ENTRY when CA_USE_AUDIO_PLUGIN_ONLY is defined.
-N/A      | <nobr>2012-06-26</nobr> | Logic analyzer warnings have been fixed.
+2013.1.2 | `2013-01-02` | Removed the need for ACCompatibility.h included from ACBaseCodec.cpp. Removed #defines around Add/RemovePropertyListenerBlock calls in CAHALAudioObject class.
+N/A      | <pre>2012-10-31</pre> | Fixes more analyzer warnings and updates ComponentBase.h to correctly define AUDIOCOMPONENT_ENTRY when CA_USE_AUDIO_PLUGIN_ONLY is defined.
+N/A      | <span style="whitespace: nowrap;">2012-06-26</span> | Logic analyzer warnings have been fixed.
 N/A      | <nobr>2012-06-13</nobr> | Core Audio Utility Classes contains Public Utility sources as well as base classes required for codec and audio unit development.
 
 Background
