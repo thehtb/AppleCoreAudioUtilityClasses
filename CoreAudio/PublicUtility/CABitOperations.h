@@ -57,7 +57,7 @@
 #include <TargetConditionals.h>
 
 // return whether a number is a power of two
-inline UInt32 IsPowerOfTwo(UInt32 x) 
+static inline UInt32 IsPowerOfTwo(UInt32 x) 
 { 
 	return (x & (x-1)) == 0;
 }
@@ -67,7 +67,7 @@ inline UInt32 IsPowerOfTwo(UInt32 x)
 // I think it's safe to remove this ...
 //#define CountLeadingZeroes(x)  ((int)__cntlzw((unsigned int)x))
 
-inline UInt32 CountLeadingZeroes(UInt32 arg)
+static inline UInt32 CountLeadingZeroes(UInt32 arg)
 {
 // GNUC / LLVM has a builtin
 #if defined(__GNUC__)
@@ -93,7 +93,7 @@ inline UInt32 CountLeadingZeroes(UInt32 arg)
 // Alias (with different spelling)
 #define CountLeadingZeros CountLeadingZeroes
 
-inline UInt32 CountLeadingZeroesLong(UInt64 arg)
+static inline UInt32 CountLeadingZeroesLong(UInt64 arg)
 {
 // GNUC / LLVM has a builtin
 #if defined(__GNUC__)
@@ -114,49 +114,49 @@ inline UInt32 CountLeadingZeroesLong(UInt64 arg)
 #define CountLeadingZerosLong CountLeadingZeroesLong
 
 // count trailing zeroes
-inline UInt32 CountTrailingZeroes(UInt32 x)
+static inline UInt32 CountTrailingZeroes(UInt32 x)
 {
 	return 32 - CountLeadingZeroes(~x & (x-1));
 }
 
 // count leading ones
-inline UInt32 CountLeadingOnes(UInt32 x)
+static inline UInt32 CountLeadingOnes(UInt32 x)
 {
 	return CountLeadingZeroes(~x);
 }
 
 // count trailing ones
-inline UInt32 CountTrailingOnes(UInt32 x)
+static inline UInt32 CountTrailingOnes(UInt32 x)
 {
 	return 32 - CountLeadingZeroes(x & (~x-1));
 }
 
 // number of bits required to represent x.
-inline UInt32 NumBits(UInt32 x)
+static inline UInt32 NumBits(UInt32 x)
 {
 	return 32 - CountLeadingZeroes(x);
 }
 
 // base 2 log of next power of two greater or equal to x
-inline UInt32 Log2Ceil(UInt32 x)
+static inline UInt32 Log2Ceil(UInt32 x)
 {
 	return 32 - CountLeadingZeroes(x - 1);
 }
 
 // base 2 log of next power of two less or equal to x
-inline UInt32 Log2Floor(UInt32 x)
+static inline UInt32 Log2Floor(UInt32 x)
 {
 	return 32 - CountLeadingZeroes(x) - 1;
 }
 
 // next power of two greater or equal to x
-inline UInt32 NextPowerOfTwo(UInt32 x)
+static inline UInt32 NextPowerOfTwo(UInt32 x)
 {
 	return 1 << Log2Ceil(x);
 }
 
 // counting the one bits in a word
-inline UInt32 CountOnes(UInt32 x)
+static inline UInt32 CountOnes(UInt32 x)
 {
 	// secret magic algorithm for counting bits in a word.
 	UInt32 t;
@@ -170,37 +170,37 @@ inline UInt32 CountOnes(UInt32 x)
 }
 
 // counting the zero bits in a word
-inline UInt32 CountZeroes(UInt32 x)
+static inline UInt32 CountZeroes(UInt32 x)
 {
 	return CountOnes(~x);
 }
 
 // return the bit position (0..31) of the least significant bit
-inline UInt32 LSBitPos(UInt32 x)
+static inline UInt32 LSBitPos(UInt32 x)
 {
 	return CountTrailingZeroes(x & -(SInt32)x);
 }
 
 // isolate the least significant bit
-inline UInt32 LSBit(UInt32 x)
+static inline UInt32 LSBit(UInt32 x)
 {
 	return x & -(SInt32)x;
 }
 
 // return the bit position (0..31) of the most significant bit
-inline UInt32 MSBitPos(UInt32 x)
+static inline UInt32 MSBitPos(UInt32 x)
 {
 	return 31 - CountLeadingZeroes(x);
 }
 
 // isolate the most significant bit
-inline UInt32 MSBit(UInt32 x)
+static inline UInt32 MSBit(UInt32 x)
 {
 	return 1 << MSBitPos(x);
 }
 
 // Division optimized for power of 2 denominators
-inline UInt32 DivInt(UInt32 numerator, UInt32 denominator)
+static inline UInt32 DivInt(UInt32 numerator, UInt32 denominator)
 {
 	if(IsPowerOfTwo(denominator))
 		return numerator >> (31 - CountLeadingZeroes(denominator));
