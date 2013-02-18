@@ -4,7 +4,7 @@ Apple Core Audio Utility Classes
 Introduction
 ------------
 
-This is a mirror of Apple's [Core Audio Utility Classes](http://developer.apple.com/library/ios/#samplecode/CoreAudioUtilityClasses/Introduction/Intro.html) sample code.
+This is a mirror of Apple's [Core Audio Utility Classes](http://developer.apple.com/library/ios/#samplecode/CoreAudioUtilityClasses/Introduction/Intro.html) sample code. There are also tagged branches with non-Apple changes (see Revision History).
 
 > The "CoreAudio" folder contains the Public Utility sources (PublicUtility folder) as well as base classes required for codec and audio unit development. These utility classes are used by various Apple Core Audio sample project and extend or wrap Core Audio API's.
 > 
@@ -12,21 +12,25 @@ This is a mirror of Apple's [Core Audio Utility Classes](http://developer.apple.
 > 
 > The "CoreAudio" utility classes require OS X 10.7+, iOS 5.0+ and Xcode 4.3+.
 
+
 Revision History
 ----------------
 
 Every project in Apple's sample code repository has a revision history file with dates and notes.
 This table is transcribed below since it's not included in the source download.
 
+Additionally, there are non-apple changes in branches, clearly marked in the table. All non-Apple changes are hereby placed in the public domain.
+
 The initial checkin of this repository was made on Feburary 17 2013 which corresponds to Apple's
 revision of 2013-01-02 and git tag 2013.1.2.
 
-Git Tag  | Date                    | Notes
----------|-------------------------|---------
-2013.1.2 | `2013-01-02` | Removed the need for ACCompatibility.h included from ACBaseCodec.cpp. Removed #defines around Add/RemovePropertyListenerBlock calls in CAHALAudioObject class.
-N/A      | `2012-10-31` | Fixes more analyzer warnings and updates ComponentBase.h to correctly define AUDIOCOMPONENT_ENTRY when CA_USE_AUDIO_PLUGIN_ONLY is defined.
-N/A      | `2012-06-26` | Logic analyzer warnings have been fixed.
-N/A      | `2012-06-13` | Core Audio Utility Classes contains Public Utility sources as well as base classes required for codec and audio unit development.
+Git Tag            | Date         | Notes
+-------------------|--------------|---------
+2013.2.18-thehtb.1 | `2013-02-18` | *Non-Apple* Beginning to make clang related changes. As supplied, CABitOperations will not work with Clang due to the difference in semantics of `inline` between gcc and llvm.
+2013.1.2           | `2013-01-02` | Removed the need for ACCompatibility.h included from ACBaseCodec.cpp. Removed #defines around Add/RemovePropertyListenerBlock calls in CAHALAudioObject class.
+N/A                | `2012-10-31` | Fixes more analyzer warnings and updates ComponentBase.h to correctly define AUDIOCOMPONENT_ENTRY when CA_USE_AUDIO_PLUGIN_ONLY is defined.
+N/A                | `2012-06-26` | Logic analyzer warnings have been fixed.
+N/A                | `2012-06-13` | Core Audio Utility Classes contains Public Utility sources as well as base classes required for codec and audio unit development.
 
 Background
 ----------
