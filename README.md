@@ -24,9 +24,9 @@ Additionally, there are non-apple changes in branches, clearly marked in the tab
 The initial checkin of this repository was made on Feburary 17 2013 which corresponds to Apple's
 revision of 2013-01-02 and git tag 2013.1.2.
 
-Git Tag            | Date         | Notes
--------------------|--------------|---------
-`2013.2.18-thehtb.1` | `2013-02-18` | *Non-Apple* Beginning to make clang related changes. As supplied, CABitOperations will not work with Clang due to the difference in semantics of `inline` between gcc and llvm.
+Git Tag              | Date         | Notes
+---------------------|--------------|---------
+`2013.2.18`          | `2013-02-18` | *Non-Apple* Beginning to make clang related changes. As supplied, CABitOperations will not work with Clang due to the difference in semantics of `inline` between gcc and llvm.
 `2013.1.2`           | `2013-01-02` | Removed the need for ACCompatibility.h included from ACBaseCodec.cpp. Removed #defines around Add/RemovePropertyListenerBlock calls in CAHALAudioObject class.
 `N/A`                | `2012-10-31` | Fixes more analyzer warnings and updates ComponentBase.h to correctly define AUDIOCOMPONENT_ENTRY when CA_USE_AUDIO_PLUGIN_ONLY is defined.
 `N/A`                | `2012-06-26` | Logic analyzer warnings have been fixed.
