@@ -1,7 +1,7 @@
 /*
      File: LockFreeFIFO.h 
  Abstract:  Part of CoreAudio Utility Classes  
-  Version: 1.0.3 
+  Version: 1.0.4 
   
  Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple 
  Inc. ("Apple") in consideration of your agreement to the following 
@@ -77,7 +77,7 @@ public:
 	{
 		//printf("WriteItem %d %d\n", mReadIndex, mWriteIndex);
 		FreeItems(); // free items on the write thread.
-		UInt32 nextWriteIndex = (mWriteIndex + 1) & mMask;
+		int32_t nextWriteIndex = (mWriteIndex + 1) & mMask;
 		if (nextWriteIndex == mFreeIndex) return NULL;
 		return &mItems[mWriteIndex];
 	}
@@ -88,15 +88,15 @@ public:
 		if (mReadIndex == mWriteIndex) return NULL;
 		return &mItems[mReadIndex];
 	}
-	void AdvanceWritePtr() { OSAtomicCompareAndSwap32(mWriteIndex, (mWriteIndex + 1) & mMask, (int32_t*)&mWriteIndex); }
-	void AdvanceReadPtr()  { OSAtomicCompareAndSwap32(mReadIndex,  (mReadIndex  + 1) & mMask, (int32_t*)&mReadIndex); }
+	void AdvanceWritePtr() { OSAtomicCompareAndSwap32(mWriteIndex, (mWriteIndex + 1) & mMask, &mWriteIndex); }
+	void AdvanceReadPtr()  { OSAtomicCompareAndSwap32(mReadIndex,  (mReadIndex  + 1) & mMask, &mReadIndex); }
 private:
 	ITEM* FreeItem() 
 	{
 		if (mFreeIndex == mReadIndex) return NULL;
 		return &mItems[mFreeIndex];
 	}
-	void AdvanceFreePtr() { OSAtomicCompareAndSwap32(mFreeIndex, (mFreeIndex + 1) & mMask, (int32_t*)&mFreeIndex); }
+	void AdvanceFreePtr() { OSAtomicCompareAndSwap32(mFreeIndex, (mFreeIndex + 1) & mMask, &mFreeIndex); }
 	
 	void FreeItems() 
 	{
@@ -108,8 +108,8 @@ private:
 		}
 	}
 	
-	volatile UInt32 mReadIndex, mWriteIndex, mFreeIndex;
-	UInt32 mMask;
+	volatile int32_t mReadIndex, mWriteIndex, mFreeIndex;
+	int32_t mMask;
 	ITEM *mItems;
 };
 
@@ -143,7 +143,7 @@ public:
 	
 	ITEM* WriteItem() 
 	{
-		UInt32 nextWriteIndex = (mWriteIndex + 1) & mMask;
+		int32_t nextWriteIndex = (mWriteIndex + 1) & mMask;
 		if (nextWriteIndex == mReadIndex) return NULL;
 		return &mItems[mWriteIndex];
 	}
@@ -156,13 +156,13 @@ public:
 	
 		// the CompareAndSwap will always succeed. We use CompareAndSwap because it calls the PowerPC sync instruction,
 		// plus any processor bug workarounds for various CPUs.
-	void AdvanceWritePtr() { OSAtomicCompareAndSwap32(mWriteIndex, (mWriteIndex + 1) & mMask, (UInt32*)&mWriteIndex); }
-	void AdvanceReadPtr()  { OSAtomicCompareAndSwap32(mReadIndex,  (mReadIndex  + 1) & mMask, (UInt32*)&mReadIndex); }
+	void AdvanceWritePtr() { OSAtomicCompareAndSwap32(mWriteIndex, (mWriteIndex + 1) & mMask, &mWriteIndex); }
+	void AdvanceReadPtr()  { OSAtomicCompareAndSwap32(mReadIndex,  (mReadIndex  + 1) & mMask, &mReadIndex); }
 	
 private:
 	
-	volatile UInt32 mReadIndex, mWriteIndex;
-	UInt32 mMask;
+	volatile int32_t mReadIndex, mWriteIndex;
+	int32_t mMask;
 	ITEM *mItems;
 };
 
