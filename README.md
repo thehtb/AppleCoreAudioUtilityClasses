@@ -12,6 +12,15 @@ This is a mirror of Apple's [Core Audio Utility Classes](http://developer.apple.
 > 
 > The "CoreAudio" utility classes require OS X 10.7+, iOS 5.0+ and Xcode 4.3+.
 
+Notes on CocoPods
+---------------
+
+CocoaPods is a great way to include this library, although the collection of sub-specs is a bit limited at the moment (pull requests
+welcome!).
+
+Also note that since Apple have on occasion greatly changed how some of the classes in here work, you're probably best off using the
+version equality rather than `~>` so that you don't get surprised by a "minor" update in the same year.
+
 Revision History
 ----------------
 
