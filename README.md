@@ -32,6 +32,7 @@ revision of 2013-01-02 and git tag 2013.1.2.
 
 Git Tag    | Date                    | Notes
 -----------|-------------------------|---------
+2014.07.08 | `2014-07-08` | Apple notes: Updates several source files for Mac OSX 10.9
 2013.09.17 | `2013-09-17` | Apple notes: Fixes a build error caused by including LockFreeFIFO.h Fixes several issues with the CARingBuffer class.<br>Our notes: Apple also made the clang fixes in our `thehtb-clang-updates` branch which is now unnecessary.
 `2013.2.18`          | `2013-02-18` | *Non-Apple* Beginning to make clang related changes. As supplied, CABitOperations will not work with Clang due to the difference in semantics of `inline` between gcc and llvm.
 2013.1.2   | `2013-01-02` | Removed the need for ACCompatibility.h included from ACBaseCodec.cpp. Removed #defines around Add/RemovePropertyListenerBlock calls in CAHALAudioObject class.

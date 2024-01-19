@@ -1,48 +1,48 @@
 /*
-     File: DataSource.cpp 
- Abstract:  DataSource.h  
-  Version: 1.0.4 
-  
- Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple 
- Inc. ("Apple") in consideration of your agreement to the following 
- terms, and your use, installation, modification or redistribution of 
- this Apple software constitutes acceptance of these terms.  If you do 
- not agree with these terms, please do not use, install, modify or 
- redistribute this Apple software. 
-  
- In consideration of your agreement to abide by the following terms, and 
- subject to these terms, Apple grants you a personal, non-exclusive 
- license, under Apple's copyrights in this original Apple software (the 
- "Apple Software"), to use, reproduce, modify and redistribute the Apple 
- Software, with or without modifications, in source and/or binary forms; 
- provided that if you redistribute the Apple Software in its entirety and 
- without modifications, you must retain this notice and the following 
- text and disclaimers in all such redistributions of the Apple Software. 
- Neither the name, trademarks, service marks or logos of Apple Inc. may 
- be used to endorse or promote products derived from the Apple Software 
- without specific prior written permission from Apple.  Except as 
- expressly stated in this notice, no other rights or licenses, express or 
- implied, are granted by Apple herein, including but not limited to any 
- patent rights that may be infringed by your derivative works or by other 
- works in which the Apple Software may be incorporated. 
-  
- The Apple Software is provided by Apple on an "AS IS" basis.  APPLE 
- MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION 
- THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS 
- FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND 
- OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS. 
-  
- IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL 
- OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION, 
- MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED 
- AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE), 
- STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE 
- POSSIBILITY OF SUCH DAMAGE. 
-  
- Copyright (C) 2013 Apple Inc. All Rights Reserved. 
-  
+     File: DataSource.cpp
+ Abstract: DataSource.h
+  Version: 1.1
+ 
+ Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
+ Inc. ("Apple") in consideration of your agreement to the following
+ terms, and your use, installation, modification or redistribution of
+ this Apple software constitutes acceptance of these terms.  If you do
+ not agree with these terms, please do not use, install, modify or
+ redistribute this Apple software.
+ 
+ In consideration of your agreement to abide by the following terms, and
+ subject to these terms, Apple grants you a personal, non-exclusive
+ license, under Apple's copyrights in this original Apple software (the
+ "Apple Software"), to use, reproduce, modify and redistribute the Apple
+ Software, with or without modifications, in source and/or binary forms;
+ provided that if you redistribute the Apple Software in its entirety and
+ without modifications, you must retain this notice and the following
+ text and disclaimers in all such redistributions of the Apple Software.
+ Neither the name, trademarks, service marks or logos of Apple Inc. may
+ be used to endorse or promote products derived from the Apple Software
+ without specific prior written permission from Apple.  Except as
+ expressly stated in this notice, no other rights or licenses, express or
+ implied, are granted by Apple herein, including but not limited to any
+ patent rights that may be infringed by your derivative works or by other
+ works in which the Apple Software may be incorporated.
+ 
+ The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
+ MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
+ THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
+ OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
+ 
+ IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
+ OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
+ MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
+ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
+ STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+ 
+ Copyright (C) 2014 Apple Inc. All Rights Reserved.
+ 
 */
 #include "DataSource.h"
 #if TARGET_OS_WIN32
@@ -128,9 +128,9 @@ OSStatus MacFile_DataSource::ReadBytes(
 {
 	if (actualCount) *actualCount = 0;
 	if (!buffer) return kAudio_ParamError;
-	ByteCount bc_actualCount = *actualCount;
+	ByteCount bc_actualCount = 0;
 	OSStatus err = FSReadFork(mFileNum, positionMode, positionOffset, requestCount, buffer, &bc_actualCount);
-	*actualCount = (UInt32)bc_actualCount;
+	if (actualCount) *actualCount = (UInt32)bc_actualCount;
 	return err;
 }
 
@@ -142,9 +142,9 @@ OSStatus MacFile_DataSource::WriteBytes(
 					UInt32* actualCount)
 {
 	if (!buffer) return kAudio_ParamError;
-	ByteCount bc_actualCount = *actualCount;
+	ByteCount bc_actualCount = 0;
 	OSStatus err =  FSWriteFork(mFileNum, positionMode, positionOffset, requestCount, buffer, &bc_actualCount);
-	*actualCount = (UInt32)bc_actualCount;
+	if (actualCount) *actualCount = (UInt32)bc_actualCount;
 	return err;
 }
 #endif
@@ -236,7 +236,7 @@ SInt64		UnixFile_DataSource::UFCurrentOffset (UInt16	positionMode,
 	return offset;
 }
 	
-OSStatus	UnixFile_DataSource::ReadBytes(	UInt16 positionMode, 
+OSStatus	UnixFile_DataSource::ReadBytes(	UInt16 positionMode,
 								SInt64 positionOffset, 
 								UInt32 requestCount, 
 								void *buffer, 
@@ -262,7 +262,7 @@ OSStatus	UnixFile_DataSource::ReadBytes(	UInt16 positionMode,
 #endif
 	
 	if (requestCount <= 0) {
-		*actualCount = 0;
+		if (actualCount) *actualCount = 0;
 		return noErr;
 	}
 
@@ -284,7 +284,7 @@ OSStatus	UnixFile_DataSource::ReadBytes(	UInt16 positionMode,
 	if (numBytes == -1) return kAudioFilePositionError;
 	mFilePointer = offset + numBytes;
 	
-	*actualCount = (UInt32)numBytes;
+	if (actualCount) *actualCount = (UInt32)numBytes;
 	return noErr;
 }
 						
@@ -321,7 +321,7 @@ OSStatus	UnixFile_DataSource::WriteBytes(UInt16 positionMode,
 	if (numBytes == -1) return kAudioFilePositionError;
 	mFilePointer = offset + numBytes;
 	
-	*actualCount = (UInt32)numBytes;
+	if (actualCount) *actualCount = (UInt32)numBytes;
 	return noErr;
 }
 
@@ -359,7 +359,7 @@ OSStatus Cached_DataSource::ReadFromHeaderCache(
 	
 	if (secondPart) {
 		UInt32 secondPartActualCount = 0;
-		err = mDataSource->ReadBytes(SEEK_SET, mHeaderCacheSize, secondPart, (char*)buffer + firstPart, &secondPartActualCount);
+		err = mDataSource->ReadBytes(SEEK_SET, mHeaderCacheSize, static_cast<UInt32>(secondPart), (char*)buffer + firstPart, &secondPartActualCount);
 		theActualCount += secondPartActualCount;
 	}
 	
@@ -430,7 +430,7 @@ OSStatus Cached_DataSource::ReadBytes(
 #endif
 			memcpy(buffer, mBodyCache + (size_t)(offset - mBodyCacheOffset), firstPart);
 			
-			theActualCount = firstPart;
+			theActualCount = static_cast<UInt32>(firstPart);
 			
 			// read new block
 			SInt64 nextOffset = mBodyCacheOffset + mBodyCacheCurSize;
@@ -444,7 +444,7 @@ OSStatus Cached_DataSource::ReadBytes(
 			// copy second part
 			secondPart = std::min(secondPart, (ByteCount)mBodyCacheCurSize);
 			if (secondPart) memcpy((char*)buffer + firstPart, mBodyCache(), secondPart);
-			theActualCount = firstPart + secondPart;
+			theActualCount = static_cast<UInt32>(firstPart + secondPart);
 		}
 	}
 	else 
@@ -613,7 +613,7 @@ OSStatus Seekable_DataSource::ReadBytes(
 		return kAudioFileEndOfFileError;
 	
 	// reduce request if it exceeds the amount available
-	requestCount = std::min((SInt64)requestCount, size - offset);
+	requestCount = static_cast<UInt32>(std::min((SInt64)requestCount, size - offset));
 	
 	UInt32 theActualCount = 0;
 	err = (*mReadFunc)(mClientData, offset, requestCount, buffer, &theActualCount);
@@ -672,13 +672,13 @@ OSStatus Buffer_DataSource::ReadBytes(
 	SInt64 theActualCount = std::min(bytesAfterOffset, (SInt64)requestCount);
 
 	if (theActualCount <= 0) {
-		*actualCount = 0;
+		if (actualCount) *actualCount = 0;
 		return kAudio_ParamError;
 	}
 
 	memcpy(buffer, mData + offsetWithinBuffer, theActualCount);
 	
-	if (actualCount) *actualCount = theActualCount;
+	if (actualCount) *actualCount = static_cast<UInt32>(theActualCount);
 	mOffset = offsetWithinBuffer + theActualCount;
 
 	return noErr;

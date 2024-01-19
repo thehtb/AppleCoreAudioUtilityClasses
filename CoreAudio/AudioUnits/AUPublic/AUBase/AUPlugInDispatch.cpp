@@ -1,48 +1,48 @@
 /*
-     File: AUPlugInDispatch.cpp 
- Abstract:  AUPlugInDispatch.h  
-  Version: 1.0.4 
-  
- Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple 
- Inc. ("Apple") in consideration of your agreement to the following 
- terms, and your use, installation, modification or redistribution of 
- this Apple software constitutes acceptance of these terms.  If you do 
- not agree with these terms, please do not use, install, modify or 
- redistribute this Apple software. 
-  
- In consideration of your agreement to abide by the following terms, and 
- subject to these terms, Apple grants you a personal, non-exclusive 
- license, under Apple's copyrights in this original Apple software (the 
- "Apple Software"), to use, reproduce, modify and redistribute the Apple 
- Software, with or without modifications, in source and/or binary forms; 
- provided that if you redistribute the Apple Software in its entirety and 
- without modifications, you must retain this notice and the following 
- text and disclaimers in all such redistributions of the Apple Software. 
- Neither the name, trademarks, service marks or logos of Apple Inc. may 
- be used to endorse or promote products derived from the Apple Software 
- without specific prior written permission from Apple.  Except as 
- expressly stated in this notice, no other rights or licenses, express or 
- implied, are granted by Apple herein, including but not limited to any 
- patent rights that may be infringed by your derivative works or by other 
- works in which the Apple Software may be incorporated. 
-  
- The Apple Software is provided by Apple on an "AS IS" basis.  APPLE 
- MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION 
- THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS 
- FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND 
- OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS. 
-  
- IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL 
- OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION, 
- MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED 
- AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE), 
- STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE 
- POSSIBILITY OF SUCH DAMAGE. 
-  
- Copyright (C) 2013 Apple Inc. All Rights Reserved. 
-  
+     File: AUPlugInDispatch.cpp
+ Abstract: AUPlugInDispatch.h
+  Version: 1.1
+ 
+ Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
+ Inc. ("Apple") in consideration of your agreement to the following
+ terms, and your use, installation, modification or redistribution of
+ this Apple software constitutes acceptance of these terms.  If you do
+ not agree with these terms, please do not use, install, modify or
+ redistribute this Apple software.
+ 
+ In consideration of your agreement to abide by the following terms, and
+ subject to these terms, Apple grants you a personal, non-exclusive
+ license, under Apple's copyrights in this original Apple software (the
+ "Apple Software"), to use, reproduce, modify and redistribute the Apple
+ Software, with or without modifications, in source and/or binary forms;
+ provided that if you redistribute the Apple Software in its entirety and
+ without modifications, you must retain this notice and the following
+ text and disclaimers in all such redistributions of the Apple Software.
+ Neither the name, trademarks, service marks or logos of Apple Inc. may
+ be used to endorse or promote products derived from the Apple Software
+ without specific prior written permission from Apple.  Except as
+ expressly stated in this notice, no other rights or licenses, express or
+ implied, are granted by Apple herein, including but not limited to any
+ patent rights that may be infringed by your derivative works or by other
+ works in which the Apple Software may be incorporated.
+ 
+ The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
+ MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
+ THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
+ OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
+ 
+ IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
+ OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
+ MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
+ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
+ STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+ 
+ Copyright (C) 2014 Apple Inc. All Rights Reserved.
+ 
 */
 #include "AUPlugInDispatch.h"
 #include "CAXException.h"
@@ -52,11 +52,14 @@
 #define ACPI ((AudioComponentPlugInInstance *)self)
 #define AUI	((AUBase *)&ACPI->mInstanceStorage)
 
+#define AUI_LOCK CAMutex::Locker auLock(AUI->GetMutex());
+
 // ------------------------------------------------------------------------------------------------
 static OSStatus AUMethodInitialize(void *self)
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = AUI->DoInitialize();
 	}
 	COMPONENT_CATCH
@@ -67,6 +70,7 @@ static OSStatus AUMethodUninitialize(void *self)
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		AUI->DoCleanup();
 	}
 	COMPONENT_CATCH
@@ -77,9 +81,10 @@ static OSStatus AUMethodGetPropertyInfo(void *self, AudioUnitPropertyID prop, Au
 {
 	OSStatus result = noErr;
 	try {
-		UInt32 dataSize;
-		Boolean writable;
+		UInt32 dataSize = 0;        // 13517289 GetPropetyInfo was returning an uninitialized value when there is an error. This is a problem for auval.
+		Boolean writable = false;
 		
+		AUI_LOCK
 		result = AUI->DispatchGetPropertyInfo(prop, scope, elem, dataSize, writable);
 		if (outDataSize != NULL)
 			*outDataSize = dataSize;
@@ -99,6 +104,7 @@ static OSStatus AUMethodGetProperty(void *self, AudioUnitPropertyID inID, AudioU
 		char *tempBuffer;
 		void *destBuffer;
 		
+		AUI_LOCK
 		if (ioDataSize == NULL) {
 			ca_debug_string("AudioUnitGetProperty: null size pointer");
 			result = kAudio_ParamError;
@@ -137,7 +143,7 @@ static OSStatus AUMethodGetProperty(void *self, AudioUnitPropertyID inID, AudioU
 		result = AUI->DispatchGetProperty(inID, inScope, inElement, destBuffer);
 		
 		if (result == noErr) {
-			if (tempBuffer && clientBufferSize < actualPropertySize) 
+			if (clientBufferSize < actualPropertySize && tempBuffer != NULL)
 			{
 				memcpy(outData, tempBuffer, clientBufferSize);
 				delete[] tempBuffer;
@@ -156,6 +162,7 @@ static OSStatus AUMethodSetProperty(void *self, AudioUnitPropertyID inID, AudioU
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		if (inData && inDataSize)
 			result = AUI->DispatchSetProperty(inID, inScope, inElement, inData, inDataSize);
 		else {
@@ -185,6 +192,7 @@ static OSStatus AUMethodAddPropertyListener(void *self, AudioUnitPropertyID prop
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = AUI->AddPropertyListener(prop, proc, userData);
 	}
 	COMPONENT_CATCH
@@ -195,6 +203,7 @@ static OSStatus AUMethodRemovePropertyListener(void *self, AudioUnitPropertyID p
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = AUI->RemovePropertyListener(prop, proc, NULL, false);
 	}
 	COMPONENT_CATCH
@@ -205,6 +214,7 @@ static OSStatus AUMethodRemovePropertyListenerWithUserData(void *self, AudioUnit
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = AUI->RemovePropertyListener(prop, proc, userData, true);
 	}
 	COMPONENT_CATCH
@@ -215,6 +225,7 @@ static OSStatus AUMethodAddRenderNotify(void *self, AURenderCallback proc, void 
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = AUI->SetRenderNotification(proc, userData);
 	}
 	COMPONENT_CATCH
@@ -225,6 +236,7 @@ static OSStatus AUMethodRemoveRenderNotify(void *self, AURenderCallback proc, vo
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = AUI->RemoveRenderNotification(proc, userData);
 	}
 	COMPONENT_CATCH
@@ -235,6 +247,7 @@ static OSStatus AUMethodGetParameter(void *self, AudioUnitParameterID param, Aud
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = (value == NULL ? kAudio_ParamError : AUI->GetParameter(param, scope, elem, *value));
 	}
 	COMPONENT_CATCH
@@ -245,6 +258,7 @@ static OSStatus AUMethodSetParameter(void *self, AudioUnitParameterID param, Aud
 {
 	OSStatus result = noErr;
 	try {
+		// this is a (potentially) realtime method; no lock
 		result = AUI->SetParameter(param, scope, elem, value, bufferOffset);
 	}
 	COMPONENT_CATCH
@@ -255,6 +269,7 @@ static OSStatus AUMethodScheduleParameters(void *self, const AudioUnitParameterE
 {
 	OSStatus result = noErr;
 	try {
+		// this is a (potentially) realtime method; no lock
 		result = AUI->ScheduleParameter(events, numEvents);
 	}
 	COMPONENT_CATCH
@@ -268,6 +283,7 @@ static OSStatus AUMethodRender(void *self, AudioUnitRenderActionFlags *ioActionF
 #if !TARGET_OS_IPHONE
 	try {
 #endif
+		// this is a processing method; no lock
 		AudioUnitRenderActionFlags tempFlags;
 		
 		if (inTimeStamp == NULL || ioData == NULL)
@@ -295,6 +311,7 @@ static OSStatus AUMethodComplexRender(void *self, AudioUnitRenderActionFlags *io
 #if !TARGET_OS_IPHONE
 	try {
 #endif
+		// this is a processing method; no lock
 		AudioUnitRenderActionFlags tempFlags;
 		
 		if (inTimeStamp == NULL || ioData == NULL)
@@ -319,6 +336,7 @@ static OSStatus AUMethodReset(void *self, AudioUnitScope scope, AudioUnitElement
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = AUI->Reset(scope, elem);
 	}
 	COMPONENT_CATCH
@@ -332,6 +350,7 @@ static OSStatus AUMethodProcess (void *self, AudioUnitRenderActionFlags *ioActio
 #if !TARGET_OS_IPHONE
 	try {
 #endif
+		// this is a processing method; no lock
 		bool doParamCheck = true;
 
 		AudioUnitRenderActionFlags tempFlags;
@@ -365,6 +384,7 @@ static OSStatus AUMethodProcessMultiple (void *self, AudioUnitRenderActionFlags 
 #if !TARGET_OS_IPHONE
 	try {
 #endif
+		// this is a processing method; no lock
 		bool doParamCheck = true;
 		
 		AudioUnitRenderActionFlags tempFlags;
@@ -396,6 +416,7 @@ static OSStatus AUMethodStart(void *self)
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = AUI->Start();
 	}
 	COMPONENT_CATCH
@@ -406,6 +427,7 @@ static OSStatus AUMethodStop(void *self)
 {
 	OSStatus result = noErr;
 	try {
+		AUI_LOCK
 		result = AUI->Stop();
 	}
 	COMPONENT_CATCH
@@ -420,6 +442,7 @@ static OSStatus AUMethodMIDIEvent(void *self, UInt32 inStatus, UInt32 inData1, U
 {
 	OSStatus result = noErr;
 	try {
+		// this is a potential render-time method; no lock
 		result = AUI->MIDIEvent(inStatus, inData1, inData2, inOffsetSampleFrame);
 	}
 	COMPONENT_CATCH
@@ -430,6 +453,7 @@ static OSStatus AUMethodSysEx(void *self, const UInt8 *inData, UInt32 inLength)
 {
 	OSStatus result = noErr;
 	try {
+		// this is a potential render-time method; no lock
 		result = AUI->SysEx(inData, inLength);
 	}
 	COMPONENT_CATCH
@@ -440,6 +464,7 @@ static OSStatus AUMethodStartNote(void *self, MusicDeviceInstrumentID inInstrume
 {
 	OSStatus result = noErr;
 	try {
+		// this is a potential render-time method; no lock
 		if (inParams == NULL || outNoteInstanceID == NULL) 
 			result = kAudio_ParamError;
 		else
@@ -453,6 +478,7 @@ static OSStatus AUMethodStopNote(void *self, MusicDeviceGroupID inGroupID, NoteI
 {
 	OSStatus result = noErr;
 	try {
+		// this is a potential render-time method; no lock
 		result = AUI->StopNote(inGroupID, inNoteInstanceID, inOffsetSampleFrame);
 	}
 	COMPONENT_CATCH
@@ -464,6 +490,7 @@ static OSStatus AUMethodPrepareInstrument (void *self, MusicDeviceInstrumentID i
 {
 	OSStatus result = noErr;
 	try {
+		// this is a potential render-time method; no lock
 		result = AUI->PrepareInstrument(inInstrument);
 	}
 	COMPONENT_CATCH
@@ -474,6 +501,7 @@ static OSStatus AUMethodReleaseInstrument (void *self, MusicDeviceInstrumentID i
 {
 	OSStatus result = noErr;
 	try {
+		// this is a potential render-time method; no lock
 		result = AUI->ReleaseInstrument(inInstrument);
 	}
 	COMPONENT_CATCH
@@ -555,13 +583,24 @@ AudioComponentMethod AUBaseProcessMultipleLookup::Lookup (SInt16 selector)
 {
 	AudioComponentMethod method = AUBaseLookup::Lookup(selector);
 	if (method) return method;
-
-	method = AUBaseProcessLookup::Lookup(selector);
-	if (method) return method;
-
+    
 	if (selector == kAudioUnitProcessMultipleSelect)
 		return (AudioComponentMethod)AUMethodProcessMultiple;
 	
+	return NULL;
+}
+
+AudioComponentMethod AUBaseProcessAndMultipleLookup::Lookup (SInt16 selector)
+{
+	AudioComponentMethod method = AUBaseLookup::Lookup(selector);
+	if (method) return method;
+
+	method = AUBaseProcessMultipleLookup::Lookup(selector);
+	if (method) return method;
+    
+	method = AUBaseProcessLookup::Lookup(selector);
+	if (method) return method;
+
 	return NULL;
 }
 
@@ -611,5 +650,20 @@ AudioComponentMethod AUMusicLookup::Lookup (SInt16 selector)
 	return MIDI_Lookup (selector);
 }
 
+AudioComponentMethod AUAuxBaseLookup::Lookup (SInt16 selector)
+{
+	switch (selector) {
+		case kAudioUnitGetPropertyInfoSelect:	return (AudioComponentMethod)AUMethodGetPropertyInfo;
+		case kAudioUnitGetPropertySelect:		return (AudioComponentMethod)AUMethodGetProperty;
+		case kAudioUnitSetPropertySelect:		return (AudioComponentMethod)AUMethodSetProperty;
+            
+		case kAudioUnitGetParameterSelect:		return (AudioComponentMethod)AUMethodGetParameter;
+		case kAudioUnitSetParameterSelect:		return (AudioComponentMethod)AUMethodSetParameter;
+            
+		default:
+			break;
+	}
+	return NULL;
+}
 #endif
 

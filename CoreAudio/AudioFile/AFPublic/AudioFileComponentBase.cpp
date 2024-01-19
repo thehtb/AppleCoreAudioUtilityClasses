@@ -1,48 +1,48 @@
 /*
-     File: AudioFileComponentBase.cpp 
- Abstract:  AudioFileComponentBase.h  
-  Version: 1.0.4 
-  
- Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple 
- Inc. ("Apple") in consideration of your agreement to the following 
- terms, and your use, installation, modification or redistribution of 
- this Apple software constitutes acceptance of these terms.  If you do 
- not agree with these terms, please do not use, install, modify or 
- redistribute this Apple software. 
-  
- In consideration of your agreement to abide by the following terms, and 
- subject to these terms, Apple grants you a personal, non-exclusive 
- license, under Apple's copyrights in this original Apple software (the 
- "Apple Software"), to use, reproduce, modify and redistribute the Apple 
- Software, with or without modifications, in source and/or binary forms; 
- provided that if you redistribute the Apple Software in its entirety and 
- without modifications, you must retain this notice and the following 
- text and disclaimers in all such redistributions of the Apple Software. 
- Neither the name, trademarks, service marks or logos of Apple Inc. may 
- be used to endorse or promote products derived from the Apple Software 
- without specific prior written permission from Apple.  Except as 
- expressly stated in this notice, no other rights or licenses, express or 
- implied, are granted by Apple herein, including but not limited to any 
- patent rights that may be infringed by your derivative works or by other 
- works in which the Apple Software may be incorporated. 
-  
- The Apple Software is provided by Apple on an "AS IS" basis.  APPLE 
- MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION 
- THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS 
- FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND 
- OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS. 
-  
- IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL 
- OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION, 
- MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED 
- AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE), 
- STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE 
- POSSIBILITY OF SUCH DAMAGE. 
-  
- Copyright (C) 2013 Apple Inc. All Rights Reserved. 
-  
+     File: AudioFileComponentBase.cpp
+ Abstract: AudioFileComponentBase.h
+  Version: 1.1
+ 
+ Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
+ Inc. ("Apple") in consideration of your agreement to the following
+ terms, and your use, installation, modification or redistribution of
+ this Apple software constitutes acceptance of these terms.  If you do
+ not agree with these terms, please do not use, install, modify or
+ redistribute this Apple software.
+ 
+ In consideration of your agreement to abide by the following terms, and
+ subject to these terms, Apple grants you a personal, non-exclusive
+ license, under Apple's copyrights in this original Apple software (the
+ "Apple Software"), to use, reproduce, modify and redistribute the Apple
+ Software, with or without modifications, in source and/or binary forms;
+ provided that if you redistribute the Apple Software in its entirety and
+ without modifications, you must retain this notice and the following
+ text and disclaimers in all such redistributions of the Apple Software.
+ Neither the name, trademarks, service marks or logos of Apple Inc. may
+ be used to endorse or promote products derived from the Apple Software
+ without specific prior written permission from Apple.  Except as
+ expressly stated in this notice, no other rights or licenses, express or
+ implied, are granted by Apple herein, including but not limited to any
+ patent rights that may be infringed by your derivative works or by other
+ works in which the Apple Software may be incorporated.
+ 
+ The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
+ MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
+ THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
+ OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
+ 
+ IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
+ OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
+ MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
+ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
+ STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+ 
+ Copyright (C) 2014 Apple Inc. All Rights Reserved.
+ 
 */
 #if !defined(__COREAUDIO_USE_FLAT_INCLUDES__)
 	#include <AudioToolbox/AudioFileComponent.h>
@@ -68,39 +68,42 @@
 			_typ _name = *(_typ *)&params->params[_index];
 #endif
 
+#define ACPI ((AudioComponentPlugInInstance *)self)
+#define AFC	((AudioFileComponentBase *)&ACPI->mInstanceStorage)
+
 //----------------------------------------------------------------------------------------
 
 static OSStatus CreateURL(
-								AudioFileComponentBase*				obj,
+								void *                            self,
 								CFURLRef							inFileRef,
 								const AudioStreamBasicDescription	*inFormat,
 								UInt32								inFlags)
 {
-	return obj->AFAPI_CreateURL(inFileRef, inFormat, inFlags);
+	return AFC->AFAPI_CreateURL(inFileRef, inFormat, inFlags);
 }
 
 static OSStatus OpenURL(
-								AudioFileComponentBase*				obj,
+								void *                            self,
 								CFURLRef							inFileRef, 
 								SInt8								inPermissions, 
 								int									inFileDescriptor)
 {
-	return obj->AFAPI_OpenURL(inFileRef, inPermissions, inFileDescriptor);
+	return AFC->AFAPI_OpenURL(inFileRef, inPermissions, inFileDescriptor);
 }
 
 static OSStatus OpenWithCallbacks(
-								AudioFileComponentBase*				obj,
+								void *                            self,
 								void *								inRefCon, 
 								AudioFile_ReadProc					inReadFunc, 
 								AudioFile_WriteProc					inWriteFunc, 
 								AudioFile_GetSizeProc				inGetSizeFunc,
 								AudioFile_SetSizeProc				inSetSizeFunc)
 {
-	return obj->AFAPI_OpenWithCallbacks(inRefCon, inReadFunc, inWriteFunc, inGetSizeFunc, inSetSizeFunc);
+	return AFC->AFAPI_OpenWithCallbacks(inRefCon, inReadFunc, inWriteFunc, inGetSizeFunc, inSetSizeFunc);
 }
 
 static OSStatus InitializeWithCallbacks(
-								AudioFileComponentBase*				obj,
+								void *                            self,
 								void *								inRefCon, 
 								AudioFile_ReadProc					inReadFunc, 
 								AudioFile_WriteProc					inWriteFunc, 
@@ -110,45 +113,45 @@ static OSStatus InitializeWithCallbacks(
 								const AudioStreamBasicDescription	*inFormat,
 								UInt32								inFlags)
 {
-	return obj->AFAPI_InitializeWithCallbacks(inRefCon, inReadFunc, inWriteFunc, inGetSizeFunc, inSetSizeFunc, inFileType, inFormat, inFlags);
+	return AFC->AFAPI_InitializeWithCallbacks(inRefCon, inReadFunc, inWriteFunc, inGetSizeFunc, inSetSizeFunc, inFileType, inFormat, inFlags);
 }
 
 static OSStatus Close(
-								AudioFileComponentBase*				obj)
+								void *                            self)
 {
-	return obj->AFAPI_Close();
+	return AFC->AFAPI_Close();
 }
 
 static OSStatus Optimize(
-								AudioFileComponentBase*				obj)
+								void *                            self)
 {
-	return obj->AFAPI_Optimize();
+	return AFC->AFAPI_Optimize();
 }
 
 static OSStatus ReadBytes(
-								AudioFileComponentBase*				obj,
+								void *                            self,
 								Boolean			inUseCache,
 								SInt64			inStartingByte, 
 								UInt32			*ioNumBytes, 
 								void			*outBuffer)
 {
-	return obj->AFAPI_ReadBytes(inUseCache, inStartingByte, ioNumBytes, outBuffer);
+	return AFC->AFAPI_ReadBytes(inUseCache, inStartingByte, ioNumBytes, outBuffer);
 }
 
 
 static OSStatus WriteBytes(
-								AudioFileComponentBase*				obj,
+								void *         self,
 								Boolean			inUseCache,
 								SInt64			inStartingByte, 
 								UInt32			*ioNumBytes, 
 								const void		*inBuffer)
 {
-	return obj->AFAPI_WriteBytes(inUseCache, inStartingByte, ioNumBytes, inBuffer);
+	return AFC->AFAPI_WriteBytes(inUseCache, inStartingByte, ioNumBytes, inBuffer);
 }
 
 
 static OSStatus ReadPackets(
-								AudioFileComponentBase*			obj,
+								void *                        self,
 								Boolean							inUseCache,
 								UInt32							*outNumBytes,
 								AudioStreamPacketDescription	*outPacketDescriptions,
@@ -156,12 +159,12 @@ static OSStatus ReadPackets(
 								UInt32							*ioNumPackets, 
 								void							*outBuffer)
 {
-	return obj->AFAPI_ReadPackets(inUseCache, outNumBytes, outPacketDescriptions, 
+	return AFC->AFAPI_ReadPackets(inUseCache, outNumBytes, outPacketDescriptions, 
 		inStartingPacket, ioNumPackets, outBuffer);
 }
 
 static OSStatus ReadPacketData(
-								AudioFileComponentBase*			obj,
+								void *                        self,
 								Boolean							inUseCache,
 								UInt32							*ioNumBytes,
 								AudioStreamPacketDescription	*outPacketDescriptions,
@@ -169,13 +172,13 @@ static OSStatus ReadPacketData(
 								UInt32							*ioNumPackets, 
 								void							*outBuffer)
 {
-	return obj->AFAPI_ReadPacketData(inUseCache, ioNumBytes, outPacketDescriptions, 
+	return AFC->AFAPI_ReadPacketData(inUseCache, ioNumBytes, outPacketDescriptions, 
 		inStartingPacket, ioNumPackets, outBuffer);
 }
 
 #if COREAUDIOTYPES_VERSION < 1050
 static OSStatus WritePackets(
-								AudioFileComponentBase*				obj,
+								void *                            self,
 								Boolean								inUseCache,
 								UInt32								inNumBytes,
 								AudioStreamPacketDescription		*inPacketDescriptions,
@@ -184,7 +187,7 @@ static OSStatus WritePackets(
 								const void							*inBuffer)
 #else
 static OSStatus WritePackets(
-								AudioFileComponentBase*				obj,
+								void *                            self,
 								Boolean								inUseCache,
 								UInt32								inNumBytes,
 								const AudioStreamPacketDescription	*inPacketDescriptions,
@@ -193,90 +196,90 @@ static OSStatus WritePackets(
 								const void							*inBuffer)
 #endif
 {
-	return obj->AFAPI_WritePackets(inUseCache, inNumBytes, 
+	return AFC->AFAPI_WritePackets(inUseCache, inNumBytes, 
 		(const AudioStreamPacketDescription	*)inPacketDescriptions, // this should be const (and is in 10.5 headers)
 		inStartingPacket, ioNumPackets, inBuffer);
 }
 
 static OSStatus GetPropertyInfo(
-								AudioFileComponentBase*	obj,
-								AudioFilePropertyID		inPropertyID,
+								void *                 self,
+								AudioFilePropertyID    inPropertyID,
 								UInt32					*outDataSize,
 								UInt32					*isWritable)
 {
-	return obj->AFAPI_GetPropertyInfo(inPropertyID, outDataSize, isWritable);
+	return AFC->AFAPI_GetPropertyInfo(inPropertyID, outDataSize, isWritable);
 }
 
 static OSStatus GetProperty(
-								AudioFileComponentBase*	obj,
+								void *                 self,
 								AudioFilePropertyID		inPropertyID,
 								UInt32					*ioDataSize,
 								void					*ioData)
 {
-	return obj->AFAPI_GetProperty(inPropertyID, ioDataSize, ioData);
+	return AFC->AFAPI_GetProperty(inPropertyID, ioDataSize, ioData);
 }
 
 
 static OSStatus SetProperty(
-								AudioFileComponentBase*	obj,
+								void *                 self,
 								AudioFilePropertyID		inPropertyID,
 								UInt32					inDataSize,
 								const void				*inData)
 {
-	return obj->AFAPI_SetProperty(inPropertyID, inDataSize, inData);
+	return AFC->AFAPI_SetProperty(inPropertyID, inDataSize, inData);
 }
 
 static OSStatus CountUserData(
-								AudioFileComponentBase*	obj,
+								void *                 self,
 								UInt32					inUserDataID,
 								UInt32					*outNumberItems)
 {
-	return obj->AFAPI_CountUserData(inUserDataID, outNumberItems);
+	return AFC->AFAPI_CountUserData(inUserDataID, outNumberItems);
 }
 
 static OSStatus GetUserDataSize(
-								AudioFileComponentBase*	obj,
+								void *                 self,
 								UInt32					inUserDataID,
 								UInt32					inIndex,
 								UInt32					*outDataSize)
 {
-	return obj->AFAPI_GetUserDataSize(inUserDataID, inIndex, outDataSize);
+	return AFC->AFAPI_GetUserDataSize(inUserDataID, inIndex, outDataSize);
 }
 
 static OSStatus GetUserData(
-								AudioFileComponentBase*	obj,
+								void *                 self,
 								UInt32					inUserDataID,
 								UInt32					inIndex,
 								UInt32					*ioUserDataSize,
 								void					*outUserData)
 {
-	return obj->AFAPI_GetUserData(inUserDataID, inIndex, ioUserDataSize, outUserData);
+	return AFC->AFAPI_GetUserData(inUserDataID, inIndex, ioUserDataSize, outUserData);
 }
 
 static OSStatus SetUserData(
-								AudioFileComponentBase*	obj,
+								void *                 self,
 								UInt32					inUserDataID,
 								UInt32					inIndex,
 								UInt32					inUserDataSize,
 								const void				*inUserData)
 {
-	return obj->AFAPI_SetUserData(inUserDataID, inIndex, inUserDataSize, inUserData);
+	return AFC->AFAPI_SetUserData(inUserDataID, inIndex, inUserDataSize, inUserData);
 }
 
 static OSStatus RemoveUserData(
-								AudioFileComponentBase*	obj,
+								void *                 self,
 								UInt32					inUserDataID,
 								UInt32					inIndex)
 {
-	return obj->AFAPI_RemoveUserData(inUserDataID, inIndex);
+	return AFC->AFAPI_RemoveUserData(inUserDataID, inIndex);
 }
 
 static OSStatus ExtensionIsThisFormat(
-								AudioFileComponentBase*	obj,
+								void *                 self,
 								CFStringRef				inExtension,
 								UInt32					*outResult)
 {
-	AudioFileFormatBase* aff = obj->GetAudioFileFormatBase();
+	AudioFileFormatBase* aff = AFC->GetAudioFileFormatBase();
 	if (!aff) return kAudio_ParamError;
 	
 	UInt32 res = aff->ExtensionIsThisFormat(inExtension);
@@ -285,12 +288,12 @@ static OSStatus ExtensionIsThisFormat(
 }
 
 static OSStatus FileDataIsThisFormat(
-								AudioFileComponentBase*	obj,
+								void *                 self,
 								UInt32					inDataByteSize, 
 								const void*				inData,
 								UInt32					*outResult)
 {
-	AudioFileFormatBase* aff = obj->GetAudioFileFormatBase();
+	AudioFileFormatBase* aff = AFC->GetAudioFileFormatBase();
 	if (!aff) return kAudio_ParamError;
 	
 	UncertainResult res = aff->FileDataIsThisFormat(inDataByteSize, inData);
@@ -299,24 +302,24 @@ static OSStatus FileDataIsThisFormat(
 }
 
 static OSStatus GetGlobalInfoSize(
-								AudioFileComponentBase*	obj,
-								AudioFilePropertyID		inPropertyID,
+								void *                 self,
+								AudioFilePropertyID	inPropertyID,
 								UInt32					inSpecifierSize,
 								const void*				inSpecifier,
 								UInt32					*outPropertySize)
 {
-	return obj->AFAPI_GetGlobalInfoSize(inPropertyID, inSpecifierSize, inSpecifier, outPropertySize);
+	return AFC->AFAPI_GetGlobalInfoSize(inPropertyID, inSpecifierSize, inSpecifier, outPropertySize);
 }
 
 static OSStatus GetGlobalInfo(
-								AudioFileComponentBase*	obj,
-								AudioFilePropertyID		inPropertyID,
+								void *                 self,
+								AudioFilePropertyID	inPropertyID,
 								UInt32					inSpecifierSize,
 								const void*				inSpecifier,
 								UInt32					*ioPropertySize,
 								void					*ioPropertyData)
 {
-	return obj->AFAPI_GetGlobalInfo(inPropertyID, inSpecifierSize, inSpecifier, ioPropertySize, ioPropertyData);
+	return AFC->AFAPI_GetGlobalInfo(inPropertyID, inSpecifierSize, inSpecifier, ioPropertySize, ioPropertyData);
 }
 
 //----------------------------------------------------------------------------------------
@@ -701,7 +704,7 @@ OSStatus AudioFileComponentBase::AFAPI_GetGlobalInfo(
 }
 
 
-
+#if !CA_USE_AUDIO_PLUGIN_ONLY
 OSStatus AudioFileComponentBase::ComponentEntryDispatch(ComponentParameters* params, AudioFileComponentBase* inThis)
 {
 	OSStatus		result = noErr;
@@ -994,7 +997,7 @@ OSStatus AudioFileComponentBase::ComponentEntryDispatch(ComponentParameters* par
 	COMPONENT_CATCH
 	return result;
 } 
-	
+#endif
 
 AudioComponentMethod AudioFileComponentLookup::Lookup (SInt16 selector)
 {

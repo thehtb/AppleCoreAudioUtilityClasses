@@ -1,48 +1,48 @@
 /*
-     File: AudioFileObject.cpp 
- Abstract:  AudioFileObject.h  
-  Version: 1.0.4 
-  
- Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple 
- Inc. ("Apple") in consideration of your agreement to the following 
- terms, and your use, installation, modification or redistribution of 
- this Apple software constitutes acceptance of these terms.  If you do 
- not agree with these terms, please do not use, install, modify or 
- redistribute this Apple software. 
-  
- In consideration of your agreement to abide by the following terms, and 
- subject to these terms, Apple grants you a personal, non-exclusive 
- license, under Apple's copyrights in this original Apple software (the 
- "Apple Software"), to use, reproduce, modify and redistribute the Apple 
- Software, with or without modifications, in source and/or binary forms; 
- provided that if you redistribute the Apple Software in its entirety and 
- without modifications, you must retain this notice and the following 
- text and disclaimers in all such redistributions of the Apple Software. 
- Neither the name, trademarks, service marks or logos of Apple Inc. may 
- be used to endorse or promote products derived from the Apple Software 
- without specific prior written permission from Apple.  Except as 
- expressly stated in this notice, no other rights or licenses, express or 
- implied, are granted by Apple herein, including but not limited to any 
- patent rights that may be infringed by your derivative works or by other 
- works in which the Apple Software may be incorporated. 
-  
- The Apple Software is provided by Apple on an "AS IS" basis.  APPLE 
- MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION 
- THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS 
- FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND 
- OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS. 
-  
- IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL 
- OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION, 
- MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED 
- AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE), 
- STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE 
- POSSIBILITY OF SUCH DAMAGE. 
-  
- Copyright (C) 2013 Apple Inc. All Rights Reserved. 
-  
+     File: AudioFileObject.cpp
+ Abstract: AudioFileObject.h
+  Version: 1.1
+ 
+ Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
+ Inc. ("Apple") in consideration of your agreement to the following
+ terms, and your use, installation, modification or redistribution of
+ this Apple software constitutes acceptance of these terms.  If you do
+ not agree with these terms, please do not use, install, modify or
+ redistribute this Apple software.
+ 
+ In consideration of your agreement to abide by the following terms, and
+ subject to these terms, Apple grants you a personal, non-exclusive
+ license, under Apple's copyrights in this original Apple software (the
+ "Apple Software"), to use, reproduce, modify and redistribute the Apple
+ Software, with or without modifications, in source and/or binary forms;
+ provided that if you redistribute the Apple Software in its entirety and
+ without modifications, you must retain this notice and the following
+ text and disclaimers in all such redistributions of the Apple Software.
+ Neither the name, trademarks, service marks or logos of Apple Inc. may
+ be used to endorse or promote products derived from the Apple Software
+ without specific prior written permission from Apple.  Except as
+ expressly stated in this notice, no other rights or licenses, express or
+ implied, are granted by Apple herein, including but not limited to any
+ patent rights that may be infringed by your derivative works or by other
+ works in which the Apple Software may be incorporated.
+ 
+ The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
+ MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
+ THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
+ OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
+ 
+ IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
+ OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
+ MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
+ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
+ STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+ 
+ Copyright (C) 2014 Apple Inc. All Rights Reserved.
+ 
 */
 #include "AudioFileObject.h"
 #include "CADebugMacros.h"
@@ -50,6 +50,8 @@
 #include <sys/stat.h>
 
 #define kAudioFileNoCacheMask		0x20
+
+const SInt64 kScanToEnd = 0x7fffFFFFffffFFFFLL;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -256,7 +258,7 @@ OSStatus AudioFileObject::Initialize(
 
 	int fileD = open((const char*)fPath, flags, filePerms);
 	if (fileD < 0)
-		return kAudioFilePermissionsError;
+		return AudioFileTranslateErrno(errno);
 	
 	err = OpenFile(kAudioFileReadWritePermission, fileD);
     FailIf (err != noErr, Bail, "OpenFile failed");
@@ -431,15 +433,15 @@ OSStatus AudioFileObject::FrameToPacket(SInt64 inFrame, SInt64& outPacket, UInt3
 
 OSStatus AudioFileObject::PacketToByte(AudioBytePacketTranslation* abpt)
 {
+    if (abpt->mPacket < 0)
+        return kAudioFileInvalidPacketOffsetError;
+    
 	if (mDataFormat.mBytesPerPacket == 0)
 	{
 		CompressedPacketTable* packetTable = GetPacketTable();
 		if (!packetTable)
 			return kAudioFileInvalidPacketOffsetError;
 			
-		if (abpt->mPacket < 0)
-			return kAudioFileInvalidPacketOffsetError;
-
 		if (abpt->mPacket < GetPacketTableSize()) {
 			abpt->mByte = (*packetTable)[(int)abpt->mPacket].mStartOffset;
 			abpt->mFlags = 0;
@@ -472,6 +474,9 @@ inline bool byte_less_than (const AudioStreamPacketDescriptionExtended& a, const
 
 OSStatus AudioFileObject::ByteToPacket(AudioBytePacketTranslation* abpt)
 {
+    if (abpt->mByte < 0)
+        return kAudioFileInvalidPacketOffsetError;
+
 	if (mDataFormat.mBytesPerPacket == 0)
 	{
 		CompressedPacketTable* packetTable = GetPacketTable();
@@ -746,7 +751,7 @@ OSStatus AudioFileObject::ReadPacketDataVBR(
 		
 		Buffer_DataSource bufSrc(bytesRead, outBuffer, dataOffset + firstPacketOffset);
 		
-		OSStatus scanErr = ScanForPackets(0x7fffFFFFffffFFFFLL, &bufSrc, false);
+		OSStatus scanErr = ScanForPackets(kScanToEnd, &bufSrc, false);
 		if (scanErr && scanErr != kAudioFileEndOfFileError)
 			return scanErr;
 		packetTableSize = packetTable->size();
@@ -918,6 +923,8 @@ Bail:
 OSStatus AudioFileObject::GetBitRate(			UInt32					*outBitRate)
 {
 	
+	if (!outBitRate) return kAudioFileUnspecifiedError;
+    
 	UInt32 bytesPerPacket = GetDataFormat().mBytesPerPacket;
 	UInt32 framesPerPacket = GetDataFormat().mFramesPerPacket;
 	Float64 sampleRate = GetDataFormat().mSampleRate;
@@ -929,12 +936,16 @@ OSStatus AudioFileObject::GetBitRate(			UInt32					*outBitRate)
 		SInt64 numPackets = GetNumPackets();
 		SInt64 numBytes = GetNumBytes();
 		SInt64 numFrames = 0;
+		
 		if (framesPerPacket) {
 			numFrames = numPackets * framesPerPacket;
 		} else {
 			// count frames
 			CompressedPacketTable* packetTable = GetPacketTable();
 			if (packetTable) {
+                if (packetTable->size() != numPackets) {
+                    return kAudioFileInvalidFileError;
+                }
 #if !TARGET_OS_WIN32
 				for (ssize_t i = 0; i < numPackets; i++)
 #else
@@ -947,6 +958,11 @@ OSStatus AudioFileObject::GetBitRate(			UInt32					*outBitRate)
 				return kAudioFileUnsupportedPropertyError;
 			}
 		}
+        
+        if (numFrames == 0 || (sampleRate == 0.)) {
+            *outBitRate = 0;
+            return noErr;
+        }
 		Float64 duration = (Float64)numFrames / sampleRate;
 		*outBitRate = (UInt32)(bitsPerByte * (Float64)numBytes / duration);
 	}
@@ -1209,6 +1225,15 @@ OSStatus AudioFileObject::GetPropertyInfo	(
             err = GetSoundCheckDictionarySize(outDataSize, &writable);			
             break;
 
+		case kTEMPAudioFilePropertyGenerateLoudnessInfo :
+            err = GetLoudnessInfoSize(outDataSize, &writable);
+            writable = 0;
+            break;
+
+		case kTEMPAudioFilePropertyLoudnessInfo :
+            err = GetLoudnessInfoSize(outDataSize, &writable);
+            break;
+
 		case kAudioFilePropertyEstimatedDuration :
             if (outDataSize) *outDataSize = sizeof(Float64);
             writable = 0;
@@ -1402,7 +1427,47 @@ OSStatus	AudioFileObject::GetProperty(
 
 			CACFDictionary		afInfoDictionary(true);
 
-            err = GetSoundCheckDictionary(&afInfoDictionary);			
+            err = GetSoundCheckDictionary(&afInfoDictionary);
+            if (err) {
+				OSStatus err2 = GetSoundCheckDictionaryFromLoudnessInfo(&afInfoDictionary);
+				if (err2 == noErr) err = noErr; // else report original error from GetSoundCheckDictionary.
+			}
+            
+			if (!err)
+			{
+				*(CFMutableDictionaryRef *)ioPropertyData = afInfoDictionary.CopyCFMutableDictionary();
+			}
+            break;
+		}
+
+        case kTEMPAudioFilePropertyLoudnessInfo :
+		{
+            FailWithAction(*ioDataSize != sizeof(CFDictionaryRef), 
+				err = kAudioFileBadPropertySizeError, Bail, "inDataSize is wrong");
+
+			CACFDictionary		afInfoDictionary(true);
+
+            err = GetLoudnessInfo(&afInfoDictionary);
+            if (err) {
+				OSStatus err2 = GetLoudnessInfoFromSoundCheckDictionary(&afInfoDictionary);
+				if (err2 == noErr) err = noErr; // else report original error from GetLoudnessInfo.
+			}
+			
+			if (!err) 
+			{
+				*(CFMutableDictionaryRef *)ioPropertyData = afInfoDictionary.CopyCFMutableDictionary();
+			}
+            break;
+		}
+
+		case kTEMPAudioFilePropertyGenerateLoudnessInfo :
+		{
+            FailWithAction(*ioDataSize != sizeof(CFDictionaryRef),
+				err = kAudioFileBadPropertySizeError, Bail, "inDataSize is wrong");
+
+			CACFDictionary		afInfoDictionary(true);
+
+            err = GenerateLoudnessInfo(&afInfoDictionary);			
             
 			if (!err)
 			{
@@ -1555,9 +1620,22 @@ OSStatus	AudioFileObject::SetProperty(
 				err = kAudioFileBadPropertySizeError, Bail, "inDataSize is wrong");
 
 			// pass the SetInfoDictionary a CACFDictionary object made with the provided CFDictionaryRef
-			// Let the caller release their own CFObject so pass false for th erelease parameter
+			// Let the caller release their own CFObject so pass false for the release parameter
 			CACFDictionary		afInfoDictionary(*(CFDictionaryRef *)inPropertyData, false);
             err = SetSoundCheckDictionary(&afInfoDictionary);			
+            
+            break;
+		}
+
+        case kTEMPAudioFilePropertyLoudnessInfo :
+		{
+            FailWithAction(inDataSize != sizeof(CFDictionaryRef), 
+				err = kAudioFileBadPropertySizeError, Bail, "inDataSize is wrong");
+
+			// pass the SetInfoDictionary a CACFDictionary object made with the provided CFDictionaryRef
+			// Let the caller release their own CFObject so pass false for the release parameter
+			CACFDictionary		afInfoDictionary(*(CFDictionaryRef *)inPropertyData, false);
+            err = SetLoudnessInfo(&afInfoDictionary);			
             
             break;
 		}
@@ -1572,6 +1650,7 @@ OSStatus	AudioFileObject::SetProperty(
 			
 			break;
 		}	
+
       default:
             err = kAudioFileUnsupportedPropertyError;			
 		break;
@@ -1758,7 +1837,7 @@ OSStatus AudioFileObject::CreateDataFile (CFURLRef	inFileRef, int	&outFileD)
 #endif
 	outFileD = open((const char*)fPath, flags, filePerms);
 	if (outFileD < 0)
-		return kAudioFilePermissionsError;
+		return AudioFileTranslateErrno(errno);
 
 	return noErr;
 }
@@ -1882,4 +1961,6 @@ OSStatus AudioFileObject::MoveData(SInt64 fromPos, SInt64 toPos, SInt64 size)
 Bail:
 	return err;
 }
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
