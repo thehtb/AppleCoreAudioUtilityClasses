@@ -1,48 +1,48 @@
 /*
-     File: AUDispatch.cpp 
- Abstract:  AUDispatch.h  
-  Version: 1.0.4 
-  
- Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple 
- Inc. ("Apple") in consideration of your agreement to the following 
- terms, and your use, installation, modification or redistribution of 
- this Apple software constitutes acceptance of these terms.  If you do 
- not agree with these terms, please do not use, install, modify or 
- redistribute this Apple software. 
-  
- In consideration of your agreement to abide by the following terms, and 
- subject to these terms, Apple grants you a personal, non-exclusive 
- license, under Apple's copyrights in this original Apple software (the 
- "Apple Software"), to use, reproduce, modify and redistribute the Apple 
- Software, with or without modifications, in source and/or binary forms; 
- provided that if you redistribute the Apple Software in its entirety and 
- without modifications, you must retain this notice and the following 
- text and disclaimers in all such redistributions of the Apple Software. 
- Neither the name, trademarks, service marks or logos of Apple Inc. may 
- be used to endorse or promote products derived from the Apple Software 
- without specific prior written permission from Apple.  Except as 
- expressly stated in this notice, no other rights or licenses, express or 
- implied, are granted by Apple herein, including but not limited to any 
- patent rights that may be infringed by your derivative works or by other 
- works in which the Apple Software may be incorporated. 
-  
- The Apple Software is provided by Apple on an "AS IS" basis.  APPLE 
- MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION 
- THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS 
- FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND 
- OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS. 
-  
- IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL 
- OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION, 
- MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED 
- AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE), 
- STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE 
- POSSIBILITY OF SUCH DAMAGE. 
-  
- Copyright (C) 2013 Apple Inc. All Rights Reserved. 
-  
+     File: AUDispatch.cpp
+ Abstract: AUDispatch.h
+  Version: 1.1
+ 
+ Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
+ Inc. ("Apple") in consideration of your agreement to the following
+ terms, and your use, installation, modification or redistribution of
+ this Apple software constitutes acceptance of these terms.  If you do
+ not agree with these terms, please do not use, install, modify or
+ redistribute this Apple software.
+ 
+ In consideration of your agreement to abide by the following terms, and
+ subject to these terms, Apple grants you a personal, non-exclusive
+ license, under Apple's copyrights in this original Apple software (the
+ "Apple Software"), to use, reproduce, modify and redistribute the Apple
+ Software, with or without modifications, in source and/or binary forms;
+ provided that if you redistribute the Apple Software in its entirety and
+ without modifications, you must retain this notice and the following
+ text and disclaimers in all such redistributions of the Apple Software.
+ Neither the name, trademarks, service marks or logos of Apple Inc. may
+ be used to endorse or promote products derived from the Apple Software
+ without specific prior written permission from Apple.  Except as
+ expressly stated in this notice, no other rights or licenses, express or
+ implied, are granted by Apple herein, including but not limited to any
+ patent rights that may be infringed by your derivative works or by other
+ works in which the Apple Software may be incorporated.
+ 
+ The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
+ MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
+ THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
+ OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
+ 
+ IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
+ OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
+ MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
+ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
+ STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+ 
+ Copyright (C) 2014 Apple Inc. All Rights Reserved.
+ 
 */
 #include "AUBase.h"
 #include "CAXException.h"
@@ -109,12 +109,14 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 		
 	case kAudioUnitInitializeSelect:
 	{
+		CAMutex::Locker lock2(This->GetMutex());
 		result = This->DoInitialize();
 	}
 		break;
 		
 	case kAudioUnitUninitializeSelect:
 	{
+		CAMutex::Locker lock2(This->GetMutex());
 		This->DoCleanup();
 		result = noErr;
 	}
@@ -122,6 +124,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 
 	case kAudioUnitGetPropertyInfoSelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AudioUnitPropertyID, pinID, 0, 5);
 			PARAM(AudioUnitScope, pinScope, 1, 5);
 			PARAM(AudioUnitElement, pinElement, 2, 5);
@@ -144,6 +147,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 
 	case kAudioUnitGetPropertySelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AudioUnitPropertyID, pinID, 0, 5);
 			PARAM(AudioUnitScope, pinScope, 1, 5);
 			PARAM(AudioUnitElement, pinElement, 2, 5);
@@ -212,6 +216,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 		
 	case kAudioUnitSetPropertySelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AudioUnitPropertyID, pinID, 0, 5);
 			PARAM(AudioUnitScope, pinScope, 1, 5);
 			PARAM(AudioUnitElement, pinElement, 2, 5);
@@ -245,6 +250,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 		
 	case kAudioUnitAddPropertyListenerSelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AudioUnitPropertyID, pinID, 0, 3);
 			PARAM(AudioUnitPropertyListenerProc, pinProc, 1, 3);
 			PARAM(void *, pinProcRefCon, 2, 3);
@@ -255,6 +261,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 #if (!__LP64__)
 	case kAudioUnitRemovePropertyListenerSelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AudioUnitPropertyID, pinID, 0, 2);
 			PARAM(AudioUnitPropertyListenerProc, pinProc, 1, 2);
 			result = This->RemovePropertyListener(pinID, pinProc, NULL, false);
@@ -264,6 +271,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 
 	case kAudioUnitRemovePropertyListenerWithUserDataSelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AudioUnitPropertyID, pinID, 0, 3);
 			PARAM(AudioUnitPropertyListenerProc, pinProc, 1, 3);
 			PARAM(void *, pinProcRefCon, 2, 3);
@@ -273,6 +281,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 		
 	case kAudioUnitAddRenderNotifySelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AURenderCallback, pinProc, 0, 2);
 			PARAM(void *, pinProcRefCon, 1, 2);
 			result = This->SetRenderNotification (pinProc, pinProcRefCon);
@@ -281,6 +290,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 
 	case kAudioUnitRemoveRenderNotifySelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AURenderCallback, pinProc, 0, 2);
 			PARAM(void *, pinProcRefCon, 1, 2);
 			result = This->RemoveRenderNotification (pinProc, pinProcRefCon);
@@ -289,6 +299,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 
 	case kAudioUnitGetParameterSelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AudioUnitParameterID, pinID, 0, 4);
 			PARAM(AudioUnitScope, pinScope, 1, 4);
 			PARAM(AudioUnitElement, pinElement, 2, 4);
@@ -299,6 +310,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 
 	case kAudioUnitSetParameterSelect:
 		{
+			CAMutex::Locker lock(This->GetMutex()); // is this realtime or no???
 			PARAM(AudioUnitParameterID, pinID, 0, 5);
 			PARAM(AudioUnitScope, pinScope, 1, 5);
 			PARAM(AudioUnitElement, pinElement, 2, 5);
@@ -310,6 +322,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 
 	case kAudioUnitScheduleParametersSelect:
 		{
+			CAMutex::Locker lock(This->GetMutex()); // is this realtime or no???
 			if (This->AudioUnitAPIVersion() > 1)
 			{
 				PARAM(AudioUnitParameterEvent *, pinParameterEvent, 0, 2);
@@ -323,6 +336,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 
 	case kAudioUnitRenderSelect:
 		{
+			// realtime; no lock
 			{
 				PARAM(AudioUnitRenderActionFlags *, pinActionFlags, 0, 5);
 				PARAM(const AudioTimeStamp *, pinTimeStamp, 1, 5);
@@ -346,6 +360,7 @@ OSStatus		AUBase::ComponentEntryDispatch(ComponentParameters *params, AUBase *Th
 
 	case kAudioUnitResetSelect:
 		{
+			CAMutex::Locker lock(This->GetMutex());
 			PARAM(AudioUnitScope, pinScope, 0, 2);
 			PARAM(AudioUnitElement, pinElement, 1, 2);
 			This->ResetRenderTime();

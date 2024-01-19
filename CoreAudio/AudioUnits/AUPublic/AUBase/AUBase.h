@@ -1,48 +1,48 @@
 /*
-     File: AUBase.h 
- Abstract:  Part of CoreAudio Utility Classes  
-  Version: 1.0.4 
-  
- Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple 
- Inc. ("Apple") in consideration of your agreement to the following 
- terms, and your use, installation, modification or redistribution of 
- this Apple software constitutes acceptance of these terms.  If you do 
- not agree with these terms, please do not use, install, modify or 
- redistribute this Apple software. 
-  
- In consideration of your agreement to abide by the following terms, and 
- subject to these terms, Apple grants you a personal, non-exclusive 
- license, under Apple's copyrights in this original Apple software (the 
- "Apple Software"), to use, reproduce, modify and redistribute the Apple 
- Software, with or without modifications, in source and/or binary forms; 
- provided that if you redistribute the Apple Software in its entirety and 
- without modifications, you must retain this notice and the following 
- text and disclaimers in all such redistributions of the Apple Software. 
- Neither the name, trademarks, service marks or logos of Apple Inc. may 
- be used to endorse or promote products derived from the Apple Software 
- without specific prior written permission from Apple.  Except as 
- expressly stated in this notice, no other rights or licenses, express or 
- implied, are granted by Apple herein, including but not limited to any 
- patent rights that may be infringed by your derivative works or by other 
- works in which the Apple Software may be incorporated. 
-  
- The Apple Software is provided by Apple on an "AS IS" basis.  APPLE 
- MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION 
- THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS 
- FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND 
- OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS. 
-  
- IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL 
- OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION, 
- MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED 
- AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE), 
- STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE 
- POSSIBILITY OF SUCH DAMAGE. 
-  
- Copyright (C) 2013 Apple Inc. All Rights Reserved. 
-  
+     File: AUBase.h
+ Abstract: Part of CoreAudio Utility Classes
+  Version: 1.1
+ 
+ Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
+ Inc. ("Apple") in consideration of your agreement to the following
+ terms, and your use, installation, modification or redistribution of
+ this Apple software constitutes acceptance of these terms.  If you do
+ not agree with these terms, please do not use, install, modify or
+ redistribute this Apple software.
+ 
+ In consideration of your agreement to abide by the following terms, and
+ subject to these terms, Apple grants you a personal, non-exclusive
+ license, under Apple's copyrights in this original Apple software (the
+ "Apple Software"), to use, reproduce, modify and redistribute the Apple
+ Software, with or without modifications, in source and/or binary forms;
+ provided that if you redistribute the Apple Software in its entirety and
+ without modifications, you must retain this notice and the following
+ text and disclaimers in all such redistributions of the Apple Software.
+ Neither the name, trademarks, service marks or logos of Apple Inc. may
+ be used to endorse or promote products derived from the Apple Software
+ without specific prior written permission from Apple.  Except as
+ expressly stated in this notice, no other rights or licenses, express or
+ implied, are granted by Apple herein, including but not limited to any
+ patent rights that may be infringed by your derivative works or by other
+ works in which the Apple Software may be incorporated.
+ 
+ The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
+ MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
+ THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
+ OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
+ 
+ IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
+ OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
+ MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
+ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
+ STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+ 
+ Copyright (C) 2014 Apple Inc. All Rights Reserved.
+ 
 */
 #ifndef __AUBase_h__
 #define __AUBase_h__
@@ -66,6 +66,7 @@
 #include "CAMath.h"
 #include "CAThreadSafeList.h"
 #include "CAVectorUnit.h"
+#include "CAMutex.h"
 #if !defined(__COREAUDIO_USE_FLAT_INCLUDES__)
 	#include <AudioUnit/AudioUnit.h>
 	#if !CA_BASIC_AU_FEATURES
@@ -245,6 +246,9 @@ public:
 														AudioUnitParameterValue			inValue,
 														UInt32							inBufferOffsetInFrames);
 
+	/*! @method CanScheduleParams */
+	virtual bool CanScheduleParameters() const = 0;
+
 	/*! @method ScheduleParameter */
 	virtual OSStatus 	ScheduleParameter (		const AudioUnitParameterEvent 	*inParameterEvent,
 														UInt32							inNumEvents);
@@ -382,6 +386,9 @@ public:
 
 	/*! @method SaveState */
 	virtual OSStatus			SaveState(				CFPropertyListRef *				outData);
+    
+    /*! @method SaveExtendedScopes */
+	virtual void                SaveExtendedScopes(		CFMutableDataRef				outData) {};
 
 	/*! @method RestoreState */
 	virtual OSStatus			RestoreState(			CFPropertyListRef				inData);
@@ -411,6 +418,9 @@ public:
 		// If not a valid preset, return an error, and the pre-existing preset is restored
 	/*! @method NewFactoryPresetSet */
 	virtual OSStatus			NewFactoryPresetSet (const AUPreset & inNewFactoryPreset);
+	
+	/*! @method NewCustomPresetSet */
+	virtual OSStatus            NewCustomPresetSet (const AUPreset & inNewCustomPreset);
 
 #if !CA_USE_AUDIO_PLUGIN_ONLY
 	/*! @method GetNumCustomUIComponents */
@@ -575,6 +585,10 @@ public:
 
 	/*! @method GetMaxFramesPerSlice */
 	UInt32						GetMaxFramesPerSlice() const { return mMaxFramesPerSlice; }
+	/*! @method UsesFixedBlockSize */
+	bool						UsesFixedBlockSize() const { return mUsesFixedBlockSize; }
+	/*! @method SetUsesFixedBlockSize */
+	void						SetUsesFixedBlockSize(bool inUsesFixedBlockSize) { mUsesFixedBlockSize = inUsesFixedBlockSize; }
 	
 	/*! @method GetVectorUnitType */
 	static SInt32				GetVectorUnitType() { return sVectorUnitType; }
@@ -585,7 +599,7 @@ public:
 	/*! @method HasSSE2 */
 	static bool					HasSSE2() { return sVectorUnitType >= kVecSSE2; }
 	/*! @method HasSSE3 */
-	static bool					HasSSE3() { return sVectorUnitType == kVecSSE3; }
+	static bool					HasSSE3() { return sVectorUnitType >= kVecSSE3; }
 	
 	/*! @method AudioUnitAPIVersion */
 	UInt8						AudioUnitAPIVersion() const { return mAudioUnitAPIVersion; }
@@ -666,6 +680,8 @@ public:
 #endif
 
 	char*						GetLoggingString () const;
+	
+	CAMutex*					GetMutex() { return mAUMutex; }
 
 	// ________________________________________________________________________
 	/*! @method CreateElement */
@@ -734,6 +750,7 @@ protected:
 	/*! @method ReallocateBuffers */
 	virtual void				ReallocateBuffers();
 									// needs to be called when mMaxFramesPerSlice changes
+	virtual void				DeallocateIOBuffers();
 		
 	/*! @method FillInParameterName */
 	static void					FillInParameterName (AudioUnitParameterInfo& ioInfo, CFStringRef inName, bool inShouldRelease)
@@ -950,6 +967,9 @@ private:
 	AUPreset					mCurrentPreset;
 	
 protected:
+	/*! @var mUsesFixedBlockSize */
+	bool						mUsesFixedBlockSize;
+	
 	struct PropertyListener {
 		AudioUnitPropertyID				propertyID;
 		AudioUnitPropertyListenerProc	listenerProc;
@@ -969,15 +989,24 @@ protected:
 	// if this is NOT null, it will contain identifying info about this AU.
 	char*						mLogString;
 
+	/*! @var mNickName */
+	CFStringRef					mNickName;
+
+	/*! @var mAUMutex */
+	CAMutex *					mAUMutex;
+
 private:
 	/*! @var sVectorUnitType */
 	static SInt32	sVectorUnitType;
 
-#if !CA_NO_AU_UI_FEATURES
+#if !CA_NO_AU_HOST_CALLBACKS
 protected:
 	/*! @var mHostCallbackInfo */
 	HostCallbackInfo 			mHostCallbackInfo;
 
+#endif
+#if !CA_NO_AU_UI_FEATURES
+protected:
 	/*! @var mContextInfo */
 	CFStringRef					mContextName;
 #endif
